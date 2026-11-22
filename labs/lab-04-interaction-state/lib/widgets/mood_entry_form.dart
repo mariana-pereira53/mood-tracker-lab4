@@ -17,13 +17,9 @@ class MoodEntryForm extends StatefulWidget {
 }
 
 class _MoodEntryFormState extends State<MoodEntryForm> {
-  // TODO 1.3: Declare the selected score. It starts with nothing selected:
   int? _score;
-
-  // TODO 2.1: Declare a TextEditingController for the note. Override
-  //   dispose() and call _noteController.dispose() before super.dispose().
-  //   Why does a controller need disposing when an int does not?
   final _noteController = TextEditingController();
+  String? _validationError;
 
   @override
   void dispose() {
@@ -31,16 +27,22 @@ class _MoodEntryFormState extends State<MoodEntryForm> {
     super.dispose();
   }
 
-  // TODO 2.3: Write a _save() method that:
-  //   1. creates a MoodEntry with the selected score, the trimmed note
-  //      (or null if the trimmed note is empty) and DateTime.now()
-  //   2. passes the entry to widget.onSubmit
-  //   3. clears the form: no score selected and an empty note
   void _save() {
-    if (_score == null)
+    if (_score == null) {
+      setState(() {
+        _validationError = 'Choose a score from 1 to 10';
+      });
       return;
+    }
 
     final rawNote = _noteController.text.trim();
+    if (rawNote.length > maxNoteLength) {
+      setState(() {
+        _validationError = 'Note must be $maxNoteLength characters or fewer';
+      });
+      return;
+    }
+
     final note = rawNote.isEmpty ? null : rawNote;
 
     final entry = MoodEntry(
@@ -54,7 +56,34 @@ class _MoodEntryFormState extends State<MoodEntryForm> {
     setState(() {
       _score = null;
       _noteController.clear();
+      _validationError = null;
     });
+  }
+
+  String? _currentValidationError() {
+    if (_score == null) return 'Choose a score from 1 to 10';
+    if (_noteController.text.trim().length > maxNoteLength) {
+      return 'Note must be $maxNoteLength characters or fewer';
+    }
+    return null;
+  }
+
+  void _updateScore(int score) {
+    setState(() {
+      _score = score;
+      if (_validationError != null) {
+        _refreshValidationError();
+      }
+    });
+  }
+
+  void _updateNote(String _) {
+    if (_validationError == null) return;
+    setState(_refreshValidationError);
+  }
+
+  void _refreshValidationError() {
+    _validationError = _currentValidationError();
   }
 
   @override
@@ -70,36 +99,26 @@ class _MoodEntryFormState extends State<MoodEntryForm> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
-            // TODO 1.3 (continued): Pass _score instead of null. In
-            //   onChanged, store the tapped score inside setState(() { ... }).
-            //   Then try it without setState. What happens, and why?
-            MoodScoreSelector(
-                selectedScore: _score,
-                onChanged: (score) {
-                  setState(() {
-                    _score = score;
-                  });
-                }
-            ),
+            MoodScoreSelector(selectedScore: _score, onChanged: _updateScore),
             const SizedBox(height: 12),
-            // TODO 2.2: Add a TextField for the note that uses your
-            //   controller, labelled 'Note (optional)' (InputDecoration).
-            //
             TextField(
               controller: _noteController,
+              onChanged: _updateNote,
               decoration: const InputDecoration(
                 labelText: 'Note (optional)',
                 border: OutlineInputBorder(),
               ),
             ),
+            if (_validationError != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _validationError!,
+                key: const ValueKey('mood-entry-validation-error'),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ],
             const SizedBox(height: 16),
-            // TODO 2.3 (continued): Add a FilledButton labelled 'Save entry'
-            //   that calls _save. While no score is selected, pass
-            //   onPressed: null so that the button is disabled.
-            FilledButton(
-              onPressed: _score == null ? null : _save,
-              child: const Text('Save entry'),
-            ),
+            FilledButton(onPressed: _save, child: const Text('Save entry')),
           ],
         ),
       ),
