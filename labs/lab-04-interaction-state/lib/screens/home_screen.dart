@@ -58,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 // TODO 1.2: Show the form as the first item in the list:
                 MoodEntryForm(onSubmit: _addEntry),
                 const SizedBox(height: 16),
+                
                 //   (add: import '../widgets/mood_entry_form.dart';)
                 //   HomeScreen is stateless, yet the form inside it will
                 //   remember a selection. Where does that state live?
